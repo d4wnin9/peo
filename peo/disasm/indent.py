@@ -17,6 +17,7 @@ def organize(msgs):
 
     return msgs
 
+
 def indent(arrows, msgs):
     global space
     max_size = max(len(arrow) for arrow in arrows)
@@ -27,8 +28,9 @@ def indent(arrows, msgs):
             l = max_size - len(arrows[i])
         space.append(l)
 
+
 def combine(arrows, msgs):
     for i in range(len(msgs)):
         msgs[i][0] = " " * space[i] + arrows[i] + " " + msgs[i][0]
-    
+
     return msgs

@@ -1,6 +1,4 @@
-import sys
-from pprint import pprint
-from enum import Enum, auto
+from enum import Enum
 
 from peo.util import Color
 
@@ -11,21 +9,25 @@ class EiClass(Enum):
     ELF64 = 0x02
     NUM = 0x03
 
+
 class EiData(Enum):
     NONE = 0x00
     LSB = 0x01
     MSB = 0x02
+
 
 class EiVersion(Enum):
     NONE = 0x00
     CURRENT = 0x01
     NUM = 0x02
 
+
 class EiOsAbi(Enum):
     NONE = 0x00
     HPUX = 0x01
     NETBSD = 0x02
     LINUX = 0x03
+
 
 class EType(Enum):
     NONE = 0x00
@@ -38,6 +40,7 @@ class EType(Enum):
     LOPROC = 0xff00
     HIPROC = 0xffff
 
+
 class EMachine(Enum):
     NONE = 0x00
     M32 = 0x01
@@ -49,6 +52,7 @@ class EMachine(Enum):
     I860 = 0x07
     X64 = 0x3e
     AARCH64 = 0xb7
+
 
 def fhdr32(buf):
     # 例外処理なくていい......?
@@ -71,6 +75,7 @@ def fhdr32(buf):
     print(f"  Number of section headers:         0x{buf[48:50][::-1].hex()}")
     print(f"  Section header string table index: 0x{buf[50:52][::-1].hex()}")
 
+
 def fhdr64(buf):
     # 例外処理なくていい......?
     print(f"ELF Header:")
@@ -91,6 +96,7 @@ def fhdr64(buf):
     print(f"  Size of section headers:           0x{buf[58:60][::-1].hex()} (bytes)")
     print(f"  Number of section headers:         0x{buf[60:62][::-1].hex()}")
     print(f"  Section header string table index: 0x{buf[62:64][::-1].hex()}")
+
 
 def fhdr(filepath):
     with open(filepath, "rb") as f:

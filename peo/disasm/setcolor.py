@@ -1,5 +1,4 @@
 import os
-from re import split
 from peo.util import Color
 
 
@@ -37,7 +36,7 @@ asem_color = {
     "other": Color.normalify, "func": Color.greenify,
     0: Color.normalify, 1: Color.redify, 2: Color.yellowify,
     3: Color.greenify, 5: Color.blueify, 6: Color.purplify,
-    7: Color.cyanify 
+    7: Color.cyanify
 }
 
 
@@ -78,6 +77,7 @@ def __make_dict():
             asem_color[key] = user_f
     except FileNotFoundError:
         pass
+
 
 
 # 配色と適用
