@@ -1,6 +1,6 @@
 import subprocess as sp
 
-from peo.util import *
+from peo.util import Color
 from peo.fhdr import EType
 
 
@@ -12,13 +12,21 @@ def checksec(filepath):
 
     with open(filepath, "rb") as f:
         buf = f.read(18)
-    proc = sp.run(["objdump", "-x", filepath], encoding="utf-8", stdout=sp.PIPE, stderr=sp.PIPE)
+    proc = sp.run(
+        ["objdump", "-xT", filepath],
+        encoding="utf-8",
+        stdout=sp.PIPE,
+        stderr=sp.PIPE
+    )
 
     # RELRO
     if "RELRO" in proc.stdout:
         RELRO = 1
-        if "BIND" in proc.stdout:
-            RELRO = 2
+        if "FLAGS" in proc.stdout:
+            ndx = proc.stdout.index("FLAGS")
+            flags = int(proc.stdout[ndx:ndx+50].split("\n")[0].split(" ")[-1], 16)
+            if flags == 8:
+                RELRO = 2
 
     # SSP
     if "__stack_chk_fail" in proc.stdout:
@@ -29,7 +37,9 @@ def checksec(filepath):
     # NX
     if "STACK" in proc.stdout:
         NX = 1
-        if "RWE" in proc.stdout:
+        ndx = proc.stdout.index("STACK")
+        perm = proc.stdout[ndx:ndx+150].split("\n")[1].split(" ")[-1]
+        if perm == "rwx":
             NX = 0
 
     # PIE
@@ -44,8 +54,7 @@ def checksec(filepath):
     elif type == "REL":
         PIE = 4
 
-
-    print("RELRO: ", end="")
+    print("RELRO     : ", end="")
     if RELRO == 0:
         print(Color.redify("No RELRO"))
     elif RELRO == 1:
@@ -53,19 +62,19 @@ def checksec(filepath):
     elif RELRO == 2:
         print(Color.greenify("Full RELRO"))
 
-    print("CANARY: ", end="")
+    print("CANARY    : ", end="")
     if SSP == 0:
         print(Color.redify("No canary found"))
     elif SSP == 1:
         print(Color.greenify("Canary found"))
 
-    print("NX: ", end="")
+    print("NX        : ", end="")
     if NX == 0:
         print(Color.redify("NX disabled"))
     elif NX == 1:
         print(Color.greenify("NX enabled"))
 
-    print("PIE: ", end="")
+    print("PIE       : ", end="")
     if PIE == 0:
         print(Color.highlightify(Color.redify("Not an ELF file")))
     if PIE == 1:
