@@ -106,5 +106,4 @@ class Op:
             self.args = []
 
     def __repr__(self):
-        args = '' if len(self.args) == 0 else ' ' + ' '.join(self.args)
-        return f'{hex(self.addr)}: {self.name}{args}'
+        return f'{hex(self.addr)}: {self.name}({", ".join(self.args)})'
