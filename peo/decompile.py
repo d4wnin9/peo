@@ -26,24 +26,33 @@ def decompile(filepath):
     operations = parse_operations(msgs)
 
     ops_main = operations['main']
-    _, imm = parse_main(ops_main, 0)
+    _, imm = parse_empty_main(ops_main, 0)
 
     print('int main() {')
     print(f'    return {imm};')
     print('}')
 
 
-def parse_main(ops, i):
-    imm = None
-    while i < len(ops):
-        try:
-            i, imm = parse_return_imm(ops, i)
-            break
-        except ParseError:
-            i += 1
-    else:
-        assert False
+def parse_empty_main(ops, i):
+    i, _ = parse_command(ops, i, 'endbr64')
+    i, pushargs = parse_command(ops, i, 'push')
+    assert pushargs == ['rbp']
+    i, movargs = parse_command(ops, i, 'mov')
+    assert movargs == ['rbp', 'rsp']
+    i, imm = parse_return_imm(ops, i)
+    i, _ = multi0(ops, i, lambda ops, i: parse_command(ops, i, 'nop'))
     return i, imm
+
+
+def multi0(ops, i, parse):
+    ret = []
+    while True:
+        try:
+            i, r = parse(ops, i)
+            ret.append(r)
+        except ParseError:
+            break
+    return i, ret
 
 
 def parse_return_imm(ops, i):
