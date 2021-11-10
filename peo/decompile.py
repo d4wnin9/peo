@@ -7,6 +7,9 @@ from collections import defaultdict
 from peo.util import format_message
 
 
+ParseError = TypeError, AssertionError, IndexError
+
+
 def decompile(filepath):
     proc = sp.run(
         ["objdump", "-d", "-M", "intel", filepath],
@@ -22,13 +25,47 @@ def decompile(filepath):
     msgs = format_message(proc.stdout)
     operations = parse_operations(msgs)
 
+    ops_main = operations['main']
+    _, imm = parse_main(ops_main, 0)
+
     print('int main() {')
-    for op in operations['main']:
-        if op.name == 'mov' and op.args[0] == 'eax':
-            print(f'    int ret = {op.args[1]};')
-        elif op.name == 'ret':
-            print('    return ret;')
+    print(f'    return {imm};')
     print('}')
+
+
+def parse_main(ops, i):
+    imm = None
+    while i < len(ops):
+        try:
+            i, imm = parse_return_imm(ops, i)
+            break
+        except ParseError:
+            i += 1
+    else:
+        assert False
+    return i, imm
+
+
+def parse_return_imm(ops, i):
+    i, imm = parse_mov_eax_imm(ops, i)
+    i, popargs = parse_command(ops, i, 'pop')
+    assert popargs[0] == 'rbp'
+    i, _ = parse_command(ops, i, 'ret')
+    return i, imm
+
+
+def parse_mov_eax_imm(ops, i):
+    i, movargs = parse_command(ops, i, 'mov')
+    assert movargs[0] == 'eax'
+    match = re.match('0x([0-9a-f]+)', movargs[1])
+    assert match
+    return i, int(match.group(1), 16)
+
+
+def parse_command(ops, i, name):
+    assert i < len(ops)
+    assert ops[i].name == name
+    return i+1, ops[i].args
 
 
 def parse_operations(msgs):
@@ -60,5 +97,5 @@ class Op:
             self.args = []
 
     def __repr__(self):
-        args = '' if len(self.args) == 0 else ' ' + ','.join(self.args)
-        return f'Op({hex(self.addr)}: {self.name}{args})'
+        args = '' if len(self.args) == 0 else ' ' + ' '.join(self.args)
+        return f'{hex(self.addr)}: {self.name}{args}'
