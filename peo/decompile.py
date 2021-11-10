@@ -26,22 +26,50 @@ def decompile(filepath):
     operations = parse_operations(msgs)
 
     ops_main = operations['main']
-    _, imm = parse_empty_main(ops_main, 0)
+    num_of_vars = count_num_of_vars(ops_main)
+    _, (ret_val, assigns) = parse_empty_main(ops_main, 0, num_of_vars)
 
     print('int main() {')
-    print(f'    return {imm};')
+    if num_of_vars > 0:
+        print(f'    int {", ".join("x"+str(i) for i in range(num_of_vars))};')
+    for var, val in assigns:
+        print(f'    {"x"+str(var)} = {val};')
+    print(f'    return {ret_val};')
     print('}')
 
 
-def parse_empty_main(ops, i):
+def count_num_of_vars(ops):
+    num = 0
+    for op in ops:
+        for arg in op.args:
+            match = re.match(r'DWORD PTR \[rbp-0x([0-9a-f]+)\]', arg)
+            if match:
+                num = max(num, int(match.group(1), 16)//4)
+    return num
+
+
+def parse_empty_main(ops, i, num_of_vars):
     i, _ = parse_command(ops, i, 'endbr64')
     i, pushargs = parse_command(ops, i, 'push')
     assert pushargs == ['rbp']
     i, movargs = parse_command(ops, i, 'mov')
     assert movargs == ['rbp', 'rsp']
+    i, assigns = multi0(ops, i,
+                        lambda ops, i: parse_assign(ops, i, num_of_vars))
     i, imm = parse_return_imm(ops, i)
     i, _ = multi0(ops, i, lambda ops, i: parse_command(ops, i, 'nop'))
-    return i, imm
+    return i, (imm, assigns)
+
+
+def parse_assign(ops, i, num_of_vars):
+    i, movargs = parse_command(ops, i, 'mov')
+    match = re.match(r'DWORD PTR \[rbp-0x([0-9a-f]+)\]', movargs[0])
+    assert match
+    var = num_of_vars - int(match.group(1), 16)//4
+    match = re.match('0x([0-9a-f]+)', movargs[1])
+    assert match
+    val = int(match.group(1), 16)
+    return i, (var, val)
 
 
 def multi0(ops, i, parse):
@@ -98,7 +126,7 @@ class Op:
             op = op[2].split(' ')
             self.name = op[0]
             if len(op) >= 2:
-                self.args = op[1].split(',')
+                self.args = ' '.join(op[1:]).split(',')
             else:
                 self.args = []
         else:
