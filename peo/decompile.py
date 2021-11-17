@@ -27,13 +27,13 @@ def decompile(filepath):
 
     ops_main = operations['main']
     num_of_vars = count_num_of_vars(ops_main)
-    _, (ret_val, assigns) = parse_empty_main(ops_main, 0, num_of_vars)
+    _, (ret_val, stmts) = parse_empty_main(ops_main, 0, num_of_vars)
 
     print('int main() {')
     if num_of_vars > 0:
         print(f'    int {", ".join("x"+str(i) for i in range(num_of_vars))};')
-    for var, val in assigns:
-        print(f'    {"x"+str(var)} = {val};')
+    for stmt in stmts:
+        print(f'    {str(stmt)};')
     print(f'    return {ret_val};')
     print('}')
 
@@ -54,22 +54,31 @@ def parse_empty_main(ops, i, num_of_vars):
     assert pushargs == ['rbp']
     i, movargs = parse_command(ops, i, 'mov')
     assert movargs == ['rbp', 'rsp']
-    i, assigns = multi0(ops, i,
-                        lambda ops, i: parse_assign(ops, i, num_of_vars))
+    i, stmts = multi0(ops, i, lambda ops, i: parse_stmt(ops, i, num_of_vars))
     i, imm = parse_return(ops, i, num_of_vars)
     i, _ = multi0(ops, i, lambda ops, i: parse_command(ops, i, 'nop'))
-    return i, (imm, assigns)
+    return i, (imm, stmts)
+
+
+def parse_stmt(ops, i, num_of_vars):
+    def assign(ops, i): return parse_assign(ops, i, num_of_vars)
+    def add(ops, i): return parse_add(ops, i, num_of_vars)
+    i, stmt = alt(ops, i, assign, add)
+    return i, stmt
 
 
 def parse_assign(ops, i, num_of_vars):
     i, movargs = parse_command(ops, i, 'mov')
-    match = re.match(r'DWORD PTR \[rbp-0x([0-9a-f]+)\]', movargs[0])
-    assert match
-    var = num_of_vars - int(match.group(1), 16)//4
-    match = re.match('0x([0-9a-f]+)', movargs[1])
-    assert match
-    val = int(match.group(1), 16)
-    return i, (var, val)
+    var = parse_var(movargs[0], num_of_vars)
+    val = parse_imm_or_var(movargs[1], num_of_vars)
+    return i, Assign(var, val)
+
+
+def parse_add(ops, i, num_of_vars):
+    i, addargs = parse_command(ops, i, 'add')
+    var = parse_var(addargs[0], num_of_vars)
+    val = parse_imm(addargs[1])
+    return i, Add(var, val)
 
 
 def multi0(ops, i, parse):
@@ -172,4 +181,31 @@ class Op:
             self.args = []
 
     def __repr__(self):
+        # debug 用
         return f'{hex(self.addr)}: {self.name}({", ".join(self.args)})'
+
+
+class Stmt:
+    def __init__(self):
+        pass
+
+    def __str__(self):
+        return '// unimplemented stmt'
+
+
+class Add(Stmt):
+    def __init__(self, var, val):
+        self.var = var
+        self.val = val
+
+    def __str__(self):
+        return f'{self.var} += {self.val}'
+
+
+class Assign(Stmt):
+    def __init__(self, var, val):
+        self.var = var
+        self.val = val
+
+    def __str__(self):
+        return f'{self.var} = {self.val}'
