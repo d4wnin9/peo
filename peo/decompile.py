@@ -56,7 +56,7 @@ def parse_empty_main(ops, i, num_of_vars):
     assert movargs == ['rbp', 'rsp']
     i, assigns = multi0(ops, i,
                         lambda ops, i: parse_assign(ops, i, num_of_vars))
-    i, imm = parse_return_imm(ops, i)
+    i, imm = parse_return(ops, i, num_of_vars)
     i, _ = multi0(ops, i, lambda ops, i: parse_command(ops, i, 'nop'))
     return i, (imm, assigns)
 
@@ -83,20 +83,58 @@ def multi0(ops, i, parse):
     return i, ret
 
 
-def parse_return_imm(ops, i):
-    i, imm = parse_mov_eax_imm(ops, i)
+def alt(ops, i, parse0, parse1):
+    try:
+        i0, ret0 = parse0(ops, i)
+    except ParseError:
+        i0 = None
+    try:
+        i1, ret1 = parse1(ops, i)
+    except ParseError:
+        i1 = None
+    assert i0 is not None or i1 is not None
+    if i0 is None:
+        return i1, ret1
+    elif i1 is None:
+        return i0, ret0
+    elif i0 < i1:
+        return i1, ret1
+    else:
+        return i0, ret0
+
+
+def parse_return(ops, i, num_of_vars):
+    i, ret = parse_mov_eax(ops, i, num_of_vars)
     i, popargs = parse_command(ops, i, 'pop')
     assert popargs[0] == 'rbp'
     i, _ = parse_command(ops, i, 'ret')
-    return i, imm
+    return i, ret
 
 
-def parse_mov_eax_imm(ops, i):
+def parse_mov_eax(ops, i, num_of_vars):
     i, movargs = parse_command(ops, i, 'mov')
     assert movargs[0] == 'eax'
-    match = re.match('0x([0-9a-f]+)', movargs[1])
+    return i, parse_imm_or_var(movargs[1], num_of_vars)
+
+
+def parse_imm_or_var(arg, num_of_vars):
+    try:
+        return parse_imm(arg)
+    except ParseError:
+        return parse_var(arg, num_of_vars)
+
+
+def parse_imm(arg):
+    match = re.match('0x([0-9a-f]+)', arg)
     assert match
-    return i, int(match.group(1), 16)
+    return str(int(match.group(1), 16))
+
+
+def parse_var(arg, num_of_vars):
+    match = re.match(r'DWORD PTR \[rbp-0x([0-9a-f]+)\]', arg)
+    assert match
+    var = num_of_vars - int(match.group(1), 16)//4
+    return f'x{var}'
 
 
 def parse_command(ops, i, name):
