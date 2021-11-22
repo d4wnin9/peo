@@ -35,8 +35,8 @@ asem_color = {
     "stacker": Color.purplify, "calc": Color.blueify,
     "other": Color.normalify, "func": Color.greenify,
     0: Color.normalify, 1: Color.redify, 2: Color.yellowify,
-    3: Color.greenify, 5: Color.blueify, 6: Color.purplify,
-    7: Color.cyanify
+    3: Color.greenify, 4: Color.blueify, 5: Color.purplify,
+    6: Color.cyanify, 7: Color.blackify
 }
 
 

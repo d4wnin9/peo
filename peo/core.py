@@ -13,13 +13,13 @@ def main():
     parser.add_argument(
         "-d",
         "--disassemble",
-        action="store_true",  # オプション(フラグ)
+        action="store_true",
         help="Display assembler contents of executable sections"
     )
     parser.add_argument(
         "-f",
         "--file-headers",
-        action="store_true",
+        action="store_true",  # フラグ
         help="Display the contents of the overall file header"
     )
     parser.add_argument(
@@ -34,7 +34,13 @@ def main():
     filepath = args.file  # ファイルのパス
 
     if args.disassemble:
-        disasm(filepath)
+        fcn = input("Do you want to disassemble all functions? (y/N/<fcn_name>): ")
+        if fcn.lower() == "y" or fcn == "":
+            disasm(filepath)
+        elif fcn.upper() == "N":
+            pass
+        else:
+            disasm(filepath, fcn)
     elif args.file_headers:
         fhdr(filepath)
     elif args.checksec:
