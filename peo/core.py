@@ -38,7 +38,7 @@ def main():
         if fcn.lower() == "y" or fcn == "":
             disasm(filepath)
         elif fcn.upper() == "N":
-            disasm(filepath, "main")
+            pass
         else:
             disasm(filepath, fcn)
     elif args.file_headers:
