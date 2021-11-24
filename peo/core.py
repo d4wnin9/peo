@@ -40,10 +40,10 @@ def main():
     filepath = args.file  # ファイルのパス
 
     if args.disassemble:
-        fcn = input("Do you want to disassemble all functions? (y/N/<fcn_name>): ")
-        if fcn.lower() == "y" or fcn == "":
+        fcn = input("Do you want to disassemble all functions? (Y/n/<fcn_name>): ")
+        if fcn.upper() == "Y" or fcn == "":
             disasm(filepath)
-        elif fcn.upper() == "N":
+        elif fcn.lower() == "n":
             pass
         else:
             disasm(filepath, fcn)
