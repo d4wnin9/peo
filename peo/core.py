@@ -3,6 +3,7 @@ import argparse
 from peo.disasm.disasm import disasm
 from peo.fhdr import fhdr
 from peo.checksec import checksec
+from peo.decompile import decompile
 
 
 def main():
@@ -28,6 +29,11 @@ def main():
         action="store_true",
         help="Display properties of executables"
     )
+    parser.add_argument(
+        "--decompile",
+        action="store_true",
+        help="Desplay the decompilation of executable"
+    )
 
     args = parser.parse_args()
 
@@ -45,6 +51,8 @@ def main():
         fhdr(filepath)
     elif args.checksec:
         checksec(filepath)
+    elif args.decompile:
+        decompile(filepath)
 
 
 if __name__ == "__main__":
