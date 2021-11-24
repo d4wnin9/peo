@@ -33,7 +33,10 @@ clr_func = {
 asem_color = {
     "jumper": Color.yellowify, "caller": Color.redify,
     "stacker": Color.purplify, "calc": Color.blueify,
-    "other": Color.normalify, "func": Color.greenify
+    "other": Color.normalify, "func": Color.greenify,
+    0: Color.normalify, 1: Color.redify, 2: Color.yellowify,
+    3: Color.greenify, 4: Color.blueify, 5: Color.purplify,
+    6: Color.cyanify, 7: Color.blackify
 }
 
 
@@ -76,7 +79,7 @@ def __make_dict():
         pass
 
 
-# 配色と適応
+# 配色と適用
 def __inner_setcolor(msgs, msg):
     if msg[0] in jumper:
         c_msgs = asem_color["jumper"](msgs)
@@ -97,3 +100,19 @@ def __inner_setcolor(msgs, msg):
         c_msgs = ' '.join(msg)
 
     return c_msgs
+
+
+# 矢印に色をつける
+def arrow_clr(arrows, clr_nums):
+    for i, clr_num in zip(range(len(arrows)), clr_nums):
+        if len(arrows[i]) != 0:
+            split_arrow = []
+            for j in range(len(arrows[i])):
+                split_arrow.append(arrows[i][j])
+
+            for s in range(len(split_arrow)):
+                key = clr_num[s] % 8
+                split_arrow[s] = asem_color[key](split_arrow[s])
+            arrows[i] = ''.join(split_arrow)
+
+    return arrows

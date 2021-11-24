@@ -1,8 +1,10 @@
+from typing import List
+
 from peo.util import get_section_as_str
 
 
 class Comment:
-    def __init__(self, filepath: str, msgs: list):
+    def __init__(self, filepath: str, msgs: List[List[str]]):
         self.filepath = filepath
         self.msgs = msgs
 
@@ -52,7 +54,7 @@ class Comment:
             except ValueError:
                 pass
 
-    def add(self) -> list:
+    def add(self) -> List[List[str]]:
         self.lea_rodata()
         self.movabs()
         self.mov_word()
