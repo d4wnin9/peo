@@ -48,7 +48,6 @@ def disasm(filepath: str, fcn: Optional[str]=None):
     msgs = setcolor(msgs)
     perf_msgs = combine(clr_arrows, msgs)
 
-    # TODO: 出力を揃える
     for i in range(len(perf_msgs)):
         print("   ".join(msgs[i]))
         if len(msgs[i]) != 1 and i+1 != len(msgs):
